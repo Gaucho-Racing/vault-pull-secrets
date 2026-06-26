@@ -5,9 +5,9 @@ branding:
   color: black
 inputs:
   vault_url:
-    description: Base URL for the Vault API.
+    description: Base URL for Vault.
     required: false
-    default: https://vault.gauchoracing.com/api
+    default: https://vault.gauchoracing.com
   secrets:
     description: Newline or comma separated Vault app secret selectors to export.
     required: true

@@ -32,6 +32,9 @@ if [ -z "${GITHUB_ENV:-}" ]; then
   exit 1
 fi
 
+vault_base_url="${VAULT_URL%/}"
+vault_api_url="${vault_base_url%/api}/api"
+
 encoded_audience="$(jq -nr --arg value "${VAULT_AUDIENCE:-}" '$value|@uri')"
 oidc_response="$(
   curl -fsS \
@@ -63,7 +66,7 @@ status_code="$(
     -X POST \
     -H "Content-Type: application/json" \
     --data "$payload" \
-    "${VAULT_URL%/}/integrations/github/actions/env"
+    "${vault_api_url}/integrations/github/actions/env"
 )"
 
 if [[ "$status_code" -lt 200 || "$status_code" -ge 300 ]]; then
