@@ -16,7 +16,7 @@ jobs:
       contents: read
       id-token: write
     env:
-      EXPECTED_TEST_VARIABLE: vault-pull-secrets-smoke-test
+      EXPECTED_TEST_VARIABLE: my-awesome-test-variable
     steps:
       - uses: actions/checkout@v5
 
