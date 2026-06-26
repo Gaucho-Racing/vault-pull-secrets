@@ -32,7 +32,7 @@ jobs:
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `secrets` | Yes | | Newline or comma separated Vault app-secret selectors to export. |
-| `vault_url` | No | `https://vault.gauchoracing.com` | Base URL for the Vault API. |
+| `vault_url` | No | `https://vault.gauchoracing.com/api` | Base URL for the Vault API. |
 | `audience` | No | `gaucho-racing-vault` | OIDC audience Vault expects when validating the GitHub token. |
 
 Secret selectors use `application.secret`, for example `pypi.publish_token`.
