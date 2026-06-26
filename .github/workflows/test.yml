@@ -1,4 +1,4 @@
-name: Vault smoke test
+name: test
 
 on:
   push:
