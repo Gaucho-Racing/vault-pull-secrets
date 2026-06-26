@@ -12,6 +12,49 @@ require_command() {
 require_command curl
 require_command jq
 
+escape_workflow_command_value() {
+  local value="$1"
+  value="${value//'%'/'%25'}"
+  value="${value//$'\r'/'%0D'}"
+  value="${value//$'\n'/'%0A'}"
+  printf '%s' "$value"
+}
+
+add_mask() {
+  local value="$1"
+  if [ -z "$value" ]; then
+    return
+  fi
+  printf '::add-mask::%s\n' "$(escape_workflow_command_value "$value")"
+}
+
+mask_env_file_values() {
+  local env_file="$1"
+  local line delimiter value has_value
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" == *"<<"* ]]; then
+      delimiter="${line#*<<}"
+      value=""
+      has_value=false
+
+      while IFS= read -r line; do
+        if [[ "$line" == "$delimiter" ]]; then
+          add_mask "$value"
+          break
+        fi
+        if [[ "$has_value" == true ]]; then
+          value+=$'\n'
+        fi
+        value+="$line"
+        has_value=true
+      done
+    elif [[ "$line" == *=* ]]; then
+      add_mask "${line#*=}"
+    fi
+  done < "$env_file"
+}
+
 if [ -z "${VAULT_URL:-}" ]; then
   echo "vault_url is required." >&2
   exit 1
@@ -76,5 +119,6 @@ if [[ "$status_code" -lt 200 || "$status_code" -ge 300 ]]; then
   exit 1
 fi
 
+mask_env_file_values "$response_file"
 cat "$response_file" >> "$GITHUB_ENV"
 rm -f "$response_file"
