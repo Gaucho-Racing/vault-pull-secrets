@@ -1,0 +1,33 @@
+name: Vault smoke test
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      EXPECTED_TEST_VARIABLE: vault-pull-secrets-smoke-test
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: ./
+        with:
+          secrets: vault-pull-secrets.test_variable
+
+      - name: Verify test variable
+        run: |
+          if [ "${TEST_VARIABLE:-}" != "$EXPECTED_TEST_VARIABLE" ]; then
+            echo "TEST_VARIABLE did not match the expected canary value." >&2
+            exit 1
+          fi
+          echo "TEST_VARIABLE matched the expected canary value."
