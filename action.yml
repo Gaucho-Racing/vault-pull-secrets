@@ -1,0 +1,22 @@
+name: Pull Vault Secrets
+description: Export Vault app secrets into the current GitHub Actions job environment.
+inputs:
+  vault_url:
+    description: Base URL for the Vault API.
+    required: true
+  secrets:
+    description: Newline or comma separated Vault app secret selectors to export.
+    required: true
+  audience:
+    description: Expected OIDC audience configured by Vault.
+    required: false
+    default: gaucho-racing-vault
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        VAULT_URL: ${{ inputs.vault_url }}
+        VAULT_SECRETS: ${{ inputs.secrets }}
+        VAULT_AUDIENCE: ${{ inputs.audience }}
+      run: ${{ github.action_path }}/pull-secrets.sh
