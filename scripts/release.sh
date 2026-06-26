@@ -117,8 +117,8 @@ if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
     exit 0
 fi
 
-git tag "$VERSION" "$LOCAL"
-git tag -f "$MAJOR_TAG" "$LOCAL"
+git tag -a "$VERSION" "$LOCAL" -m "Release $VERSION"
+git tag -fa "$MAJOR_TAG" "$LOCAL" -m "Release $VERSION"
 git push origin "$VERSION"
 git push --force origin "$MAJOR_TAG"
 
