@@ -4,6 +4,7 @@ inputs:
   vault_url:
     description: Base URL for the Vault API.
     required: true
+    default: https://vault.gauchoracing.com
   secrets:
     description: Newline or comma separated Vault app secret selectors to export.
     required: true
