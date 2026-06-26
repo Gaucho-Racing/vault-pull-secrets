@@ -1,5 +1,8 @@
 name: Pull Vault Secrets
 description: Export Vault app secrets into the current GitHub Actions job environment.
+branding:
+  icon: unlock
+  color: black
 inputs:
   vault_url:
     description: Base URL for the Vault API.
