@@ -3,7 +3,7 @@ description: Export Vault app secrets into the current GitHub Actions job enviro
 inputs:
   vault_url:
     description: Base URL for the Vault API.
-    required: true
+    required: false
     default: https://vault.gauchoracing.com
   secrets:
     description: Newline or comma separated Vault app secret selectors to export.
