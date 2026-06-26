@@ -55,8 +55,23 @@ if [ "$requested_secrets" = "[]" ]; then
 fi
 
 payload="$(jq -n --arg token "$oidc_token" --argjson secrets "$requested_secrets" '{token: $token, secrets: $secrets}')"
-curl -fsS \
-  -X POST \
-  -H "Content-Type: application/json" \
-  --data "$payload" \
-  "${VAULT_URL%/}/integrations/github/actions/env" >> "$GITHUB_ENV"
+response_file="$(mktemp)"
+status_code="$(
+  curl -sS \
+    -o "$response_file" \
+    -w "%{http_code}" \
+    -X POST \
+    -H "Content-Type: application/json" \
+    --data "$payload" \
+    "${VAULT_URL%/}/integrations/github/actions/env"
+)"
+
+if [[ "$status_code" -lt 200 || "$status_code" -ge 300 ]]; then
+  echo "Vault returned HTTP ${status_code}." >&2
+  jq -r '.error // empty' < "$response_file" >&2 || true
+  rm -f "$response_file"
+  exit 1
+fi
+
+cat "$response_file" >> "$GITHUB_ENV"
+rm -f "$response_file"
