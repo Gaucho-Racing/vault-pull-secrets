@@ -64,12 +64,38 @@ jobs:
           actual: ${{ fromJSON(steps.vault.outputs.secrets_json).TEST_VARIABLE }}
           expected: my-awesome-test-variable
 
+  explicit-selector-required:
+    name: Explicit Selector Required
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: wildcard
+        name: Request wildcard selector
+        continue-on-error: true
+        uses: ./
+        with:
+          secrets: vault-pull-secrets.*
+
+      - name: Verify wildcard selector was rejected
+        run: |
+          if [ "${{ steps.wildcard.outcome }}" != "failure" ]; then
+            echo "Wildcard selector request should have failed." >&2
+            exit 1
+          fi
+          echo "Wildcard selector request was rejected."
+
   all-passing:
     name: All Passing
     if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     needs:
       - env-export
       - action-input
+      - explicit-selector-required
     runs-on: ubuntu-latest
     permissions: {}
     steps:
@@ -81,6 +107,10 @@ jobs:
           fi
           if [ "${{ needs.action-input.result }}" != "success" ]; then
             echo "Action Input did not pass." >&2
+            exit 1
+          fi
+          if [ "${{ needs.explicit-selector-required.result }}" != "success" ]; then
+            echo "Explicit Selector Required did not pass." >&2
             exit 1
           fi
           echo "All checks passed."
