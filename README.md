@@ -4,6 +4,8 @@ GitHub Action for exporting Gaucho Racing Vault app secrets into a workflow job 
 
 The action requests a GitHub Actions OIDC token, sends it to Vault, and appends the authorized secrets returned by Vault to `GITHUB_ENV`. Vault decides access using its GitHub Actions rules, which match the workflow repository, Git ref, and requested app-secret selectors.
 
+Links: [Vault](https://vault.gauchoracing.com) · [Vault repository](https://github.com/Gaucho-Racing/Vault)
+
 ## Usage
 
 ```yaml
