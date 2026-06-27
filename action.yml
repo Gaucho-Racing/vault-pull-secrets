@@ -15,10 +15,15 @@ inputs:
     description: Expected OIDC audience configured by Vault.
     required: false
     default: gaucho-racing-vault
+outputs:
+  secrets_json:
+    description: JSON object of exported environment variable names to secret values.
+    value: ${{ steps.pull-secrets.outputs.secrets_json }}
 runs:
   using: composite
   steps:
-    - shell: bash
+    - id: pull-secrets
+      shell: bash
       env:
         VAULT_URL: ${{ inputs.vault_url }}
         VAULT_SECRETS: ${{ inputs.secrets }}
