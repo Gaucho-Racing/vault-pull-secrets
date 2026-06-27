@@ -1,0 +1,22 @@
+name: Assert Input
+description: Assert that an action input matches an expected value.
+inputs:
+  actual:
+    description: Actual value to compare.
+    required: true
+  expected:
+    description: Expected value to compare.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        ACTUAL: ${{ inputs.actual }}
+        EXPECTED: ${{ inputs.expected }}
+      run: |
+        if [ "$ACTUAL" != "$EXPECTED" ]; then
+          echo "Action input did not match the expected value." >&2
+          exit 1
+        fi
+        echo "Action input matched the expected value."

@@ -12,7 +12,8 @@ on:
 permissions: {}
 
 jobs:
-  smoke:
+  env-export:
+    name: Env Export
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     permissions:
@@ -41,3 +42,87 @@ jobs:
             exit 1
           fi
           echo "TEST_VARIABLE matched the expected canary value."
+
+  action-input:
+    name: Action Input
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: vault
+        uses: ./
+        with:
+          secrets: vault-pull-secrets.test_variable
+
+      - name: Verify output as action input
+        uses: ./.github/actions/assert-input
+        with:
+          actual: ${{ fromJSON(steps.vault.outputs.secrets_json).TEST_VARIABLE }}
+          expected: my-awesome-test-variable
+
+  wildcard-selector:
+    name: Wildcard Selector
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      EXPECTED_TEST_VARIABLE: my-awesome-test-variable
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: vault
+        uses: ./
+        with:
+          secrets: vault-pull-secrets.*
+
+      - name: Verify wildcard test variable
+        env:
+          OUTPUT_TEST_VARIABLE: ${{ fromJSON(steps.vault.outputs.secrets_json).TEST_VARIABLE }}
+        run: |
+          if [ "${TEST_VARIABLE:-}" != "$EXPECTED_TEST_VARIABLE" ]; then
+            echo "TEST_VARIABLE from wildcard selector did not match the expected canary value." >&2
+            exit 1
+          fi
+          if [ "${OUTPUT_TEST_VARIABLE:-}" != "$EXPECTED_TEST_VARIABLE" ]; then
+            echo "secrets_json from wildcard selector did not include the expected canary value." >&2
+            exit 1
+          fi
+          echo "Wildcard selector TEST_VARIABLE matched the expected canary value."
+
+      - name: Verify wildcard output as action input
+        uses: ./.github/actions/assert-input
+        with:
+          actual: ${{ fromJSON(steps.vault.outputs.secrets_json).TEST_VARIABLE }}
+          expected: my-awesome-test-variable
+
+  all-passing:
+    name: All Passing
+    if: ${{ always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs:
+      - env-export
+      - action-input
+      - wildcard-selector
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Verify all checks passed
+        run: |
+          if [ "${{ needs.env-export.result }}" != "success" ]; then
+            echo "Env Export did not pass." >&2
+            exit 1
+          fi
+          if [ "${{ needs.action-input.result }}" != "success" ]; then
+            echo "Action Input did not pass." >&2
+            exit 1
+          fi
+          if [ "${{ needs.wildcard-selector.result }}" != "success" ]; then
+            echo "Wildcard Selector did not pass." >&2
+            exit 1
+          fi
+          echo "All checks passed."
