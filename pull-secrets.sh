@@ -55,6 +55,71 @@ mask_env_file_values() {
   done < "$env_file"
 }
 
+env_file_to_json() {
+  local env_file="$1"
+  local line delimiter name value has_value
+  local json="{}"
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    if [[ "$line" == *"<<"* ]]; then
+      name="${line%%<<*}"
+      delimiter="${line#*<<}"
+      value=""
+      has_value=false
+
+      while IFS= read -r line; do
+        if [[ "$line" == "$delimiter" ]]; then
+          break
+        fi
+        if [[ "$has_value" == true ]]; then
+          value+=$'\n'
+        fi
+        value+="$line"
+        has_value=true
+      done
+
+      json="$(jq -c --arg name "$name" --arg value "$value" '. + {($name): $value}' <<< "$json")"
+    elif [[ "$line" == *=* ]]; then
+      name="${line%%=*}"
+      value="${line#*=}"
+      json="$(jq -c --arg name "$name" --arg value "$value" '. + {($name): $value}' <<< "$json")"
+    fi
+  done < "$env_file"
+
+  printf '%s' "$json"
+}
+
+output_delimiter() {
+  local name="$1"
+  local value="$2"
+  local prefix delimiter suffix
+
+  prefix="${name^^}"
+  prefix="${prefix//[!A-Z0-9_]/_}"
+  delimiter="VAULT_OUTPUT_${prefix}_EOF"
+  suffix=1
+
+  while [[ "$value" == *"$delimiter"* ]]; do
+    delimiter="VAULT_OUTPUT_${prefix}_EOF_${suffix}"
+    suffix=$((suffix + 1))
+  done
+
+  printf '%s' "$delimiter"
+}
+
+write_multiline_output() {
+  local name="$1"
+  local value="$2"
+  local delimiter
+
+  delimiter="$(output_delimiter "$name" "$value")"
+  {
+    printf '%s<<%s\n' "$name" "$delimiter"
+    printf '%s\n' "$value"
+    printf '%s\n' "$delimiter"
+  } >> "$GITHUB_OUTPUT"
+}
+
 if [ -z "${VAULT_URL:-}" ]; then
   echo "vault_url is required." >&2
   exit 1
@@ -72,6 +137,11 @@ fi
 
 if [ -z "${GITHUB_ENV:-}" ]; then
   echo "GITHUB_ENV is unavailable." >&2
+  exit 1
+fi
+
+if [ -z "${GITHUB_OUTPUT:-}" ]; then
+  echo "GITHUB_OUTPUT is unavailable." >&2
   exit 1
 fi
 
@@ -120,5 +190,8 @@ if [[ "$status_code" -lt 200 || "$status_code" -ge 300 ]]; then
 fi
 
 mask_env_file_values "$response_file"
+secrets_json="$(env_file_to_json "$response_file")"
+add_mask "$secrets_json"
+write_multiline_output "secrets_json" "$secrets_json"
 cat "$response_file" >> "$GITHUB_ENV"
 rm -f "$response_file"

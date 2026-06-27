@@ -23,14 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./
+      - id: vault
+        uses: ./
         with:
           secrets: vault-pull-secrets.test_variable
 
       - name: Verify test variable
+        env:
+          OUTPUT_TEST_VARIABLE: ${{ fromJSON(steps.vault.outputs.secrets_json).TEST_VARIABLE }}
         run: |
           if [ "${TEST_VARIABLE:-}" != "$EXPECTED_TEST_VARIABLE" ]; then
             echo "TEST_VARIABLE did not match the expected canary value." >&2
+            exit 1
+          fi
+          if [ "${OUTPUT_TEST_VARIABLE:-}" != "$EXPECTED_TEST_VARIABLE" ]; then
+            echo "secrets_json did not include the expected canary value." >&2
             exit 1
           fi
           echo "TEST_VARIABLE matched the expected canary value."
