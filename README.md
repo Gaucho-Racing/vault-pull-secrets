@@ -19,7 +19,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - uses: Gaucho-Racing/vault-pull-secrets@main
+      - uses: Gaucho-Racing/vault-pull-secrets@v1
         with:
           secrets: |
             pypi.publish_token
@@ -88,7 +88,7 @@ jobs:
   smoke:
     runs-on: ubuntu-latest
     steps:
-      - uses: Gaucho-Racing/vault-pull-secrets@main
+      - uses: Gaucho-Racing/vault-pull-secrets@v1
         with:
           secrets: pypi.publish_token
 
